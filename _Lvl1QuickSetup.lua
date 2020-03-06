@@ -1,16 +1,21 @@
 
 local Frame = CreateFrame("Frame");
 Frame:RegisterEvent("CINEMATIC_START")
+Frame:RegisterEvent("PLAYER_REGEN_ENABLED")
+Frame:RegisterEvent("CHAT_MSG_SYSTEM")
 LoadAddOn("Blizzard_MacroUI")
 local _, Class = UnitClass("player");
 local _,race = UnitRace("player")
 
-if L1QS_macroPlacement == nil and L1QS_Bindings == nil and L1QS_characterMacros == nil then
-	L1QS_macroPlacement = {}
-	L1QS_Bindings = {}
-	L1QS_characterMacros = {}
+if L1QS_macroPlacement == nil then 
+L1QS_macroPlacement = {}
 end
-
+if L1QS_Bindings == nil then 
+L1QS_Bindings = {}
+end
+if L1QS_characterMacros == nil then 
+L1QS_characterMacros = {}
+end
 function createMacros(arg)
 	local profile = Class
 	if arg ~= nil then
@@ -33,48 +38,88 @@ end
 
 if UnitLevel('player') == 1 then
 	GuidelimeDataChar = {}
-	GuidelimeDataChar["mainFrameFontSize"] = 12
-	GuidelimeDataChar["mainFrameWidth"] = 320
+	GuidelimeDataChar["mainFrameFontSize"] = 11
+	GuidelimeDataChar["mainFrameWidth"] = 275
+	GuidelimeDataChar["mainFrameX"] = -3.14737796783447
+	GuidelimeDataChar["mainFrameLocked"] = false
+	GuidelimeDataChar["mainFrameY"] = 36.0707550048828
+	GuidelimeDataChar["mainFrameRelative"] = "LEFT"
+	GuidelimeDataChar["mainFrameHeight"] = 290
 	
 	if  race == "NightElf" then
-		GuidelimeDataChar["currentGuide"] = "Zarant 1-11 Teldrassil"
-	elseif race == "Dwarf" or race == "Gnome" then
+		GuidelimeDataChar["currentGuide"] = "Zarant 1-11 Teldrassil v2"
+	elseif race == "Dwarf" then
 		GuidelimeDataChar["currentGuide"] = "Zarant 1-11 Dun Morogh"
 	end
 end
+
+local lastSysMsg = nil
+function L1QS_UpdateMacros(e,msg)
 	
+	local spell,rank = nil,nil
+	if e ~= "CHAT_MSG_SYSTEM" then msg = lastSysMsg end
+    if msg then
+        spell,rank = string.match(msg,"Your pet has learned a new %a*%:%s(.*)%s%(Rank%s(%d*)%)")
+    end
+    if not spell then return end
+	lastSysMsg = msg
+    if UnitAffectingCombat("player") and e == "CHAT_MSG_SYSTEM" then return end
+    --print(spell) print(rank)
+    local macros = {"01PA","01PF"}
+    for i,m in pairs(macros) do
+        local name, icon, body, isLocal = GetMacroInfo(m)
+        if body then
+            local pattern = spell.."%s?%(%aank%s(%d*)"
+            local macrorank = string.match(body,pattern)
+            if macrorank and macrorank ~= rank then
+				--print('a')
+				C_Timer.After(0.15, function()
+                EditMacro(m,name,icon,gsub(body,pattern,spell.."(Rank "..rank),isLocal)
+				end)
+            end  
+        end
+    end
+	lastSysMsg = nil
+    return
+ end
+
+
 Frame:SetScript("OnEvent",function(self,event,arg1,arg2,arg3,arg4)
-	if UnitLevel('player') == 1 then
-		local a=true SetActionBarToggles(a,a,a,a,0) SHOW_MULTI_ACTIONBAR_1=a SHOW_MULTI_ACTIONBAR_2=a SHOW_MULTI_ACTIONBAR_3=a SHOW_MULTI_ACTIONBAR_4 = a MultiActionBar_Update()
-		createMacros()
-		local consoleVariables = {
-			["cameraPivot"]="0",
-			["showTargetOfTarget"]="1",
-			["instantQuestText"]="1",
-			["cameraSmoothStyle"]="0",
-			["cameraDistanceMaxZoomFactor"]="2.6",
-			["statusText"]="1",
-			["nameplateShowEnemies"]="1",
-			["statusTextDisplay"]="BOTH",
-			["showTutorials"]="0",
-			["deselectOnClick"]="1",
-			["autoLootDefault"]="1",
-			["weatherDensity"]="0"
+	if event == "PLAYER_REGEN_ENABLED" or event == "CHAT_MSG_SYSTEM" then
+		L1QS_UpdateMacros(event,arg1)
+	else
+		if UnitLevel('player') == 1 then
+			local a=true SetActionBarToggles(a,a,a,a,0) SHOW_MULTI_ACTIONBAR_1=a SHOW_MULTI_ACTIONBAR_2=a SHOW_MULTI_ACTIONBAR_3=a SHOW_MULTI_ACTIONBAR_4 = a MultiActionBar_Update()
+			createMacros()
+			local consoleVariables = {
+				["cameraPivot"]="0",
+				["showTargetOfTarget"]="1",
+				["instantQuestText"]="1",
+				["cameraSmoothStyle"]="0",
+				["cameraDistanceMaxZoomFactor"]="2.6",
+				["statusText"]="1",
+				["nameplateShowEnemies"]="1",
+				["statusTextDisplay"]="BOTH",
+				["showTutorials"]="0",
+				["deselectOnClick"]="1",
+				["autoLootDefault"]="1",
+				["weatherDensity"]="0"
 
-		}
+			}
 
-		for var,value in pairs(consoleVariables) do 
-			SetCVar(var,value)
+			for var,value in pairs(consoleVariables) do 
+				SetCVar(var,value)
+			end
+			
+			StopCinematic()
+			CameraZoomOut(50)
+			
+			loadKeyBinds()
+			
+			loadActionButtons()
+			
+			
 		end
-		
-		StopCinematic()
-		CameraZoomOut(50)
-		
-		loadKeyBinds()
-		
-		loadActionButtons()
-		
-		
 	end
 end)
 
@@ -135,7 +180,8 @@ function loadActionButtons(arg)
 	end
 end
 
-
+-- /run saveActionButtons() print(L1QS_macroPlacement["HUNTER"][1])
+-- /run print(L1QS_macroPlacement["HUNTER"][1])
 
 function saveActionButtons(arg)
 	local profile = Class
@@ -230,4 +276,5 @@ function loadAll(arg)
 loadKeyBinds(arg)
 loadActionButtons(arg)
 end
+
 

@@ -1,11 +1,18 @@
-
-local Frame = CreateFrame("Frame");
-Frame:RegisterEvent("CINEMATIC_START")
-Frame:RegisterEvent("PLAYER_REGEN_ENABLED")
-Frame:RegisterEvent("CHAT_MSG_SYSTEM")
-LoadAddOn("Blizzard_MacroUI")
-local _, Class = UnitClass("player");
+local _,addon = ...
+local _, class = UnitClass("player");
 local _,race = UnitRace("player")
+local Frame = CreateFrame("Frame");
+
+Frame:RegisterEvent("CINEMATIC_START")
+Frame:RegisterEvent("ADDON_LOADED")
+
+if class == "HUNTER" then
+	Frame:RegisterEvent("PLAYER_REGEN_ENABLED")
+	Frame:RegisterEvent("CHAT_MSG_SYSTEM")
+end
+LoadAddOn("Blizzard_MacroUI")
+
+local consoleVariables = {};
 
 if L1QS_macroPlacement == nil then 
 L1QS_macroPlacement = {}
@@ -16,8 +23,22 @@ end
 if L1QS_characterMacros == nil then 
 L1QS_characterMacros = {}
 end
+if L1QS_Settings == nil then 
+L1QS_Settings = {}
+end
+if L1QS_Settings[class] == nil then
+L1QS_Settings[class] = {}
+end
+if L1QS_Settings[race] == nil then
+L1QS_Settings[race] = {}
+end
+if not L1QS_Settings["Guidelime"] then
+	L1QS_Settings["Guidelime"] = {}
+end
+
+
 function createMacros(arg)
-	local profile = Class
+	local profile = class
 	if arg ~= nil then
 		profile = arg
 	end
@@ -28,28 +49,9 @@ function createMacros(arg)
 		if macro[4] ~= nil then
 			characterMacro = nil
 		end
-		if GetMacroInfo(macro[1]) == nil and (profile ~= Class or characterMacro ~= nil) then 
+		if GetMacroInfo(macro[1]) == nil and (profile ~= class or characterMacro ~= nil) then 
 			CreateMacro(macro[1], macro[2], macro[3], characterMacro)
 		end
-	end
-end
-
-
-
-if UnitLevel('player') == 1 then
-	GuidelimeDataChar = {}
-	GuidelimeDataChar["mainFrameFontSize"] = 11
-	GuidelimeDataChar["mainFrameWidth"] = 275
-	GuidelimeDataChar["mainFrameX"] = -3.14737796783447
-	GuidelimeDataChar["mainFrameLocked"] = false
-	GuidelimeDataChar["mainFrameY"] = 36.0707550048828
-	GuidelimeDataChar["mainFrameRelative"] = "LEFT"
-	GuidelimeDataChar["mainFrameHeight"] = 290
-	
-	if  race == "NightElf" then
-		GuidelimeDataChar["currentGuide"] = "Zarant 1-11 Teldrassil v2"
-	elseif race == "Dwarf" then
-		GuidelimeDataChar["currentGuide"] = "Zarant 1-11 Dun Morogh"
 	end
 end
 
@@ -85,27 +87,13 @@ function L1QS_UpdateMacros(e,msg)
 
 
 Frame:SetScript("OnEvent",function(self,event,arg1,arg2,arg3,arg4)
+	
 	if event == "PLAYER_REGEN_ENABLED" or event == "CHAT_MSG_SYSTEM" then
 		L1QS_UpdateMacros(event,arg1)
-	else
+	elseif event == "CINEMATIC_START" then
 		if UnitLevel('player') == 1 then
 			local a=true SetActionBarToggles(a,a,a,a,0) SHOW_MULTI_ACTIONBAR_1=a SHOW_MULTI_ACTIONBAR_2=a SHOW_MULTI_ACTIONBAR_3=a SHOW_MULTI_ACTIONBAR_4 = a MultiActionBar_Update()
 			createMacros()
-			local consoleVariables = {
-				["cameraPivot"]="0",
-				["showTargetOfTarget"]="1",
-				["instantQuestText"]="1",
-				["cameraSmoothStyle"]="0",
-				["cameraDistanceMaxZoomFactor"]="2.6",
-				["statusText"]="1",
-				["nameplateShowEnemies"]="1",
-				["statusTextDisplay"]="BOTH",
-				["showTutorials"]="0",
-				["deselectOnClick"]="1",
-				["autoLootDefault"]="1",
-				["weatherDensity"]="0"
-
-			}
 
 			for var,value in pairs(consoleVariables) do 
 				SetCVar(var,value)
@@ -117,8 +105,20 @@ Frame:SetScript("OnEvent",function(self,event,arg1,arg2,arg3,arg4)
 			loadKeyBinds()
 			
 			loadActionButtons()
-			
-			
+		end
+	elseif event == "ADDON_LOADED" then
+		if UnitLevel('player') == 1 then
+
+			local _ = addon.config_cache:gsub("([^\n\r]-)[\n\r]",function(c)
+				var,value = string.match(c,"%s*SET%s*(%a*)%s*\"(.*)\"")
+				if var and var ~= "" then
+					consoleVariables[var] = value
+				end
+				return ""
+			end)
+
+			GuidelimeDataChar = L1QS_Settings["Guidelime"]
+			GuidelimeDataChar["currentGuide"] = L1QS_Settings[race]["currentGuide"]
 		end
 	end
 end)
@@ -160,7 +160,7 @@ function reportActionButtons()
 end
 
 function loadActionButtons(arg)
-	local profile = Class
+	local profile = class
 	if arg ~= nil then
 		profile = arg
 	end
@@ -184,7 +184,7 @@ end
 -- /run print(L1QS_macroPlacement["HUNTER"][1])
 
 function saveActionButtons(arg)
-	local profile = Class
+	local profile = class
 	if arg ~= nil then
 		profile = arg
 	end
@@ -204,7 +204,7 @@ end
 
 
 function saveKeyBinds(arg)
-	local profile = Class
+	local profile = class
 	if arg ~= nil then
 		profile = arg
 	end
@@ -221,7 +221,7 @@ function saveKeyBinds(arg)
 end
 
 function loadKeyBinds(arg)
-	local profile = Class
+	local profile = class
 	if arg ~= nil then
 		profile = arg
 	end
@@ -245,7 +245,7 @@ function loadKeyBinds(arg)
 end
 
 function saveMacros(arg)
-	local profile = Class
+	local profile = class
 	if arg ~= nil then
 		profile = arg
 	end
@@ -269,6 +269,10 @@ function saveAll(arg)
 saveMacros(arg)
 saveKeyBinds(arg)
 saveActionButtons(arg)
+
+L1QS_Settings["Guidelime"] = GuidelimeDataChar
+L1QS_Settings[race]["currentGuide"] = GuidelimeDataChar["currentGuide"]
+
 end
 
 function loadAll(arg)

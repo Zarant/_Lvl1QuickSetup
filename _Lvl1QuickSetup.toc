@@ -1,10 +1,11 @@
-## Interface: 11303
+## Interface: 11304
 ## Author: Zarant
 ## Title: _Lvl1QuickSetup
 ## Notes: Skip cinematics and set up interface options on level 1 characters
 ## Version: 1.0
 ## OptionalDeps: 
-## SavedVariables: L1QS_macroPlacement, L1QS_Bindings, L1QS_characterMacros
+## SavedVariables: L1QS_macroPlacement, L1QS_Bindings, L1QS_characterMacros, L1QS_Settings
+ConsoleVariables.lua
 _L1QS_settings.lua
 _WeakAuras.lua
 _Lvl1QuickSetup.lua

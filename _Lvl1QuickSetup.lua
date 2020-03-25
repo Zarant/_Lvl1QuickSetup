@@ -107,7 +107,7 @@ Frame:SetScript("OnEvent",function(self,event,arg1,arg2,arg3,arg4)
 			loadActionButtons()
 		end
 	elseif event == "ADDON_LOADED" then
-		if UnitLevel('player') == 1 then
+		if UnitLevel('player') == 1 and UnitXP("player") == 0 then
 
 			local _ = addon.config_cache:gsub("([^\n\r]-)[\n\r]",function(c)
 				var,value = string.match(c,"%s*SET%s*(%a*)%s*\"(.*)\"")

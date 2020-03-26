@@ -1,4 +1,4 @@
-local _,addon = ...
+local addonName,addon = ...
 local _, class = UnitClass("player");
 local _,race = UnitRace("player")
 local Frame = CreateFrame("Frame");
@@ -13,28 +13,6 @@ end
 LoadAddOn("Blizzard_MacroUI")
 
 local consoleVariables = {};
-
-if L1QS_macroPlacement == nil then 
-L1QS_macroPlacement = {}
-end
-if L1QS_Bindings == nil then 
-L1QS_Bindings = {}
-end
-if L1QS_characterMacros == nil then 
-L1QS_characterMacros = {}
-end
-if L1QS_Settings == nil then 
-L1QS_Settings = {}
-end
-if L1QS_Settings[class] == nil then
-L1QS_Settings[class] = {}
-end
-if L1QS_Settings[race] == nil then
-L1QS_Settings[race] = {}
-end
-if not L1QS_Settings["Guidelime"] then
-	L1QS_Settings["Guidelime"] = {}
-end
 
 
 function createMacros(arg)
@@ -106,9 +84,29 @@ Frame:SetScript("OnEvent",function(self,event,arg1,arg2,arg3,arg4)
 			
 			loadActionButtons()
 		end
-	elseif event == "ADDON_LOADED" then
+	elseif event == "ADDON_LOADED" and arg1 == addonName then
+		if L1QS_macroPlacement == nil then 
+			L1QS_macroPlacement = {}
+		end
+		if L1QS_Bindings == nil then 
+			L1QS_Bindings = {}
+		end
+		if L1QS_characterMacros == nil then 
+			L1QS_characterMacros = {}
+		end
+		if L1QS_Settings == nil then 
+			L1QS_Settings = {}
+		end
+		if L1QS_Settings[class] == nil then
+			L1QS_Settings[class] = {}
+		end
+		if L1QS_Settings[race] == nil then
+			L1QS_Settings[race] = {}
+		end
+		if not L1QS_Settings["Guidelime"] then
+			L1QS_Settings["Guidelime"] = {}
+		end
 		if UnitLevel('player') == 1 and UnitXP("player") == 0 then
-
 			local _ = addon.config_cache:gsub("([^\n\r]-)[\n\r]",function(c)
 				var,value = string.match(c,"%s*SET%s*(%a*)%s*\"(.*)\"")
 				if var and var ~= "" then

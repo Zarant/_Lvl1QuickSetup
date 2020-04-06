@@ -116,6 +116,11 @@ Frame:SetScript("OnEvent",function(self,event,arg1,arg2,arg3,arg4)
 			end)
 
 			GuidelimeDataChar = L1QS_Settings["Guidelime"]
+			if GuidelimeDataChar["guideSkip"] then
+				for i,v in pairs(GuidelimeDataChar["guideSkip"]) do
+					GuidelimeDataChar["guideSkip"][i] = {}
+				end
+			end
 			if L1QS_Settings[race]["currentGuide"] then
 				GuidelimeDataChar["currentGuide"] = L1QS_Settings[race]["currentGuide"]
 			end

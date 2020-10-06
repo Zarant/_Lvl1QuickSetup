@@ -5,11 +5,8 @@ local Frame = CreateFrame("Frame");
 
 Frame:RegisterEvent("CINEMATIC_START")
 Frame:RegisterEvent("ADDON_LOADED")
+Frame:RegisterEvent("UNIT_SPELLCAST_START")
 
-if class == "HUNTER" then
-	Frame:RegisterEvent("PLAYER_REGEN_ENABLED")
-	Frame:RegisterEvent("CHAT_MSG_SYSTEM")
-end
 LoadAddOn("Blizzard_MacroUI")
 
 local consoleVariables = {};
@@ -33,40 +30,28 @@ function createMacros(arg)
 	end
 end
 
-local lastSysMsg = nil
-function L1QS_UpdateMacros(e,msg)
-	
-	local spell,rank = nil,nil
-	if e ~= "CHAT_MSG_SYSTEM" then msg = lastSysMsg end
-    if msg then
-        spell,rank = string.match(msg,"Your pet has learned a new %a*%:%s(.*)%s%(Rank%s(%d*)%)")
-    end
-    if not spell then return end
-	lastSysMsg = msg
-    if UnitAffectingCombat("player") and e == "CHAT_MSG_SYSTEM" then return end
-    --print(spell) print(rank)
-    local macros = {"01PA","01PF"}
-    for i,m in pairs(macros) do
-        local name, icon, body, isLocal = GetMacroInfo(m)
-        if body then
-            local pattern = spell.."%s?%(%aank%s(%d*)"
-            local macrorank = string.match(body,pattern)
-            if macrorank and macrorank ~= rank then
-				--print('a')
-				C_Timer.After(0.15, function()
-                EditMacro(m,name,icon,gsub(body,pattern,spell.."(Rank "..rank),isLocal)
-				end)
-            end  
-        end
-    end
-	lastSysMsg = nil
-    return
- end
+--[[
+local HSsent = 0
+local HSstart = 0
+function SwitchBindLocation()
+	if GetTime() - HSstart > 9.8 then
+		ConfirmBinder()
+		Frame:SetScript("OnUpdate",nil)
+	end
+end]]
 
 
 Frame:SetScript("OnEvent",function(self,event,arg1,arg2,arg3,arg4)
-	
-	if event == "PLAYER_REGEN_ENABLED" or event == "CHAT_MSG_SYSTEM" then
+	--if event == "UNIT_SPELLCAST_START" and arg1 == "player" and arg3 == 8690 then
+		--HSstart = GetTime()
+		--Frame:SetScript("OnUpdate",SwitchBindLocation)
+		--local delay = HSsent-HSstart
+		--print('start:'..arg3..'/Delay: '..delay)
+	if event == "UNIT_SPELLCAST_SENT" and arg1 == "player" then
+		if string.match(arg3,".+%-.+%-.+%-.+%-.+%-8690%-.+") then
+			HSsent = GetTime()
+		end
+	elseif event == "PLAYER_REGEN_ENABLED" or event == "CHAT_MSG_SYSTEM" then
 		L1QS_UpdateMacros(event,arg1)
 	elseif event == "CINEMATIC_START" then
 		if UnitLevel('player') == 1 then
@@ -108,14 +93,22 @@ Frame:SetScript("OnEvent",function(self,event,arg1,arg2,arg3,arg4)
 		end
 		if UnitLevel('player') == 1 and UnitXP("player") == 0 then
 			local _ = addon.config_cache:gsub("([^\n\r]-)[\n\r]",function(c)
-				var,value = string.match(c,"%s*SET%s*(%a*)%s*\"(.*)\"")
+				var,value = string.match(c,"%s*SET%s+(%a+)%s+\"(.*)\"")
 				if var and var ~= "" then
 					consoleVariables[var] = value
 				end
 				return ""
 			end)
-
-			GuidelimeDataChar = L1QS_Settings["Guidelime"]
+			
+			for i,v in pairs(L1QS_Settings["Guidelime"]) do
+				if type(v) == "table" then
+					GuidelimeDataChar[i] = {}
+				else
+					GuidelimeDataChar[i] = v
+				end
+			end
+			
+			--GuidelimeDataChar = L1QS_Settings["Guidelime"]
 			if GuidelimeDataChar["guideSkip"] then
 				for i,v in pairs(GuidelimeDataChar["guideSkip"]) do
 					GuidelimeDataChar["guideSkip"][i] = {}
@@ -285,5 +278,3 @@ function loadAll(arg)
 loadKeyBinds(arg)
 loadActionButtons(arg)
 end
-
-

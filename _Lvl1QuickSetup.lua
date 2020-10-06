@@ -5,7 +5,7 @@ local Frame = CreateFrame("Frame");
 
 Frame:RegisterEvent("CINEMATIC_START")
 Frame:RegisterEvent("ADDON_LOADED")
-Frame:RegisterEvent("UNIT_SPELLCAST_START")
+--Frame:RegisterEvent("UNIT_SPELLCAST_START")
 
 LoadAddOn("Blizzard_MacroUI")
 
@@ -40,9 +40,11 @@ function SwitchBindLocation()
 	end
 end]]
 
-
+if not GuidelimeDataChar then
+GuidelimeDataChar = {}
+end
 Frame:SetScript("OnEvent",function(self,event,arg1,arg2,arg3,arg4)
-	--if event == "UNIT_SPELLCAST_START" and arg1 == "player" and arg3 == 8690 then
+	--[[if event == "UNIT_SPELLCAST_START" and arg1 == "player" and arg3 == 8690 then
 		--HSstart = GetTime()
 		--Frame:SetScript("OnUpdate",SwitchBindLocation)
 		--local delay = HSsent-HSstart
@@ -50,8 +52,8 @@ Frame:SetScript("OnEvent",function(self,event,arg1,arg2,arg3,arg4)
 	if event == "UNIT_SPELLCAST_SENT" and arg1 == "player" then
 		if string.match(arg3,".+%-.+%-.+%-.+%-.+%-8690%-.+") then
 			HSsent = GetTime()
-		end
-	elseif event == "PLAYER_REGEN_ENABLED" or event == "CHAT_MSG_SYSTEM" then
+		end]]
+	if event == "PLAYER_REGEN_ENABLED" or event == "CHAT_MSG_SYSTEM" then
 		L1QS_UpdateMacros(event,arg1)
 	elseif event == "CINEMATIC_START" then
 		if UnitLevel('player') == 1 then
@@ -100,22 +102,24 @@ Frame:SetScript("OnEvent",function(self,event,arg1,arg2,arg3,arg4)
 				return ""
 			end)
 			
-			for i,v in pairs(L1QS_Settings["Guidelime"]) do
-				if type(v) == "table" then
-					GuidelimeDataChar[i] = {}
-				else
-					GuidelimeDataChar[i] = v
+			if GuidelimeDataChar then
+				for i,v in pairs(L1QS_Settings["Guidelime"]) do
+					if type(v) == "table" then
+						GuidelimeDataChar[i] = {}
+					else
+						GuidelimeDataChar[i] = v
+					end
 				end
-			end
-			
-			--GuidelimeDataChar = L1QS_Settings["Guidelime"]
-			if GuidelimeDataChar["guideSkip"] then
-				for i,v in pairs(GuidelimeDataChar["guideSkip"]) do
-					GuidelimeDataChar["guideSkip"][i] = {}
+				
+				--GuidelimeDataChar = L1QS_Settings["Guidelime"]
+				if GuidelimeDataChar["guideSkip"] then
+					for i,v in pairs(GuidelimeDataChar["guideSkip"]) do
+						GuidelimeDataChar["guideSkip"][i] = {}
+					end
 				end
-			end
-			if L1QS_Settings[race]["currentGuide"] then
-				GuidelimeDataChar["currentGuide"] = L1QS_Settings[race]["currentGuide"]
+				if L1QS_Settings[race]["currentGuide"] then
+					GuidelimeDataChar["currentGuide"] = L1QS_Settings[race]["currentGuide"]
+				end
 			end
 		end
 	end
@@ -267,9 +271,10 @@ function saveAll(arg)
 saveMacros(arg)
 saveKeyBinds(arg)
 saveActionButtons(arg)
-
-L1QS_Settings["Guidelime"] = GuidelimeDataChar
-L1QS_Settings[race]["currentGuide"] = GuidelimeDataChar["currentGuide"]
+if GuidelimeDataChar then
+	L1QS_Settings["Guidelime"] = GuidelimeDataChar
+	L1QS_Settings[race]["currentGuide"] = GuidelimeDataChar["currentGuide"]
+end
 
 end
 
@@ -278,3 +283,5 @@ function loadAll(arg)
 loadKeyBinds(arg)
 loadActionButtons(arg)
 end
+
+

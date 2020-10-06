@@ -1,4 +1,4 @@
-## Interface: 11304
+## Interface: 11305
 ## Author: Zarant
 ## Title: _Lvl1QuickSetup
 ## Notes: Skip cinematics and set up interface options on level 1 characters

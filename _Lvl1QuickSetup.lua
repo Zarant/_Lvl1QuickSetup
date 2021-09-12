@@ -1,11 +1,12 @@
-local addonName,addon = ...
+l addonName,addon = ...
 local _, class = UnitClass("player");
 local _,race = UnitRace("player")
 local Frame = CreateFrame("Frame");
 
 Frame:RegisterEvent("CINEMATIC_START")
 Frame:RegisterEvent("ADDON_LOADED")
---Frame:RegisterEvent("UNIT_SPELLCAST_START")
+Frame:RegisterEvent("PLAYER_ENTERING_WORLD")
+Frame:RegisterEvent("QUEST_ACCEPTED")
 
 LoadAddOn("Blizzard_MacroUI")
 
@@ -30,32 +31,18 @@ function createMacros(arg)
 	end
 end
 
---[[
-local HSsent = 0
-local HSstart = 0
-function SwitchBindLocation()
-	if GetTime() - HSstart > 9.8 then
-		ConfirmBinder()
-		Frame:SetScript("OnUpdate",nil)
-	end
-end]]
+
 
 if not GuidelimeDataChar then
 GuidelimeDataChar = {}
 end
+
+LoadAddOn("Blizzard_CompactRaidFrames")
+
+
 Frame:SetScript("OnEvent",function(self,event,arg1,arg2,arg3,arg4)
-	--[[if event == "UNIT_SPELLCAST_START" and arg1 == "player" and arg3 == 8690 then
-		--HSstart = GetTime()
-		--Frame:SetScript("OnUpdate",SwitchBindLocation)
-		--local delay = HSsent-HSstart
-		--print('start:'..arg3..'/Delay: '..delay)
-	if event == "UNIT_SPELLCAST_SENT" and arg1 == "player" then
-		if string.match(arg3,".+%-.+%-.+%-.+%-.+%-8690%-.+") then
-			HSsent = GetTime()
-		end]]
-	if event == "PLAYER_REGEN_ENABLED" or event == "CHAT_MSG_SYSTEM" then
-		L1QS_UpdateMacros(event,arg1)
-	elseif event == "CINEMATIC_START" then
+	
+	if event == "CINEMATIC_START" then
 		if UnitLevel('player') == 1 then
 			local a=true SetActionBarToggles(a,a,a,a,0) SHOW_MULTI_ACTIONBAR_1=a SHOW_MULTI_ACTIONBAR_2=a SHOW_MULTI_ACTIONBAR_3=a SHOW_MULTI_ACTIONBAR_4 = a MultiActionBar_Update()
 			createMacros()
@@ -72,6 +59,8 @@ Frame:SetScript("OnEvent",function(self,event,arg1,arg2,arg3,arg4)
 			loadActionButtons()
 		end
 	elseif event == "ADDON_LOADED" and arg1 == addonName then
+
+		DEFAULT_CHAT_FRAME:AddMessage("Rested XP: "..tostring(GetXPExhaustion()))
 		if L1QS_macroPlacement == nil then 
 			L1QS_macroPlacement = {}
 		end
@@ -121,7 +110,35 @@ Frame:SetScript("OnEvent",function(self,event,arg1,arg2,arg3,arg4)
 					GuidelimeDataChar["currentGuide"] = L1QS_Settings[race]["currentGuide"]
 				end
 			end
+			
+			if RXPData then
+				RXPCData = RXPCData or {}
+				RXPCData.currentGuideName = L1QS_Settings[race].currentGuideName
+				RXPCData.currentGuideGroup = L1QS_Settings[race].currentGuideGroup
+				RXPCData.currentStep = 1
+			end
 		end
+	elseif event == "PLAYER_ENTERING_WORLD" and Bug then
+		Bug:GetParent():SetScale(0.75)
+        
+
+        
+	elseif event == "QUEST_ACCEPTED" then
+		if arg1 == 9542 then
+			Stopwatch_StartCountdown(0,1,11)
+			Stopwatch_Play()
+		elseif arg1 == 9541 then
+			Stopwatch_StartCountdown(0,0,30)
+			Stopwatch_Play()
+		end
+    elseif event == "GROUP_ROSTER_UPDATE" then
+    --[[
+            /run function sp(f,i) tr="TOPRIGHT";f2=f.debuffFrames;s=f2[1]:GetWidth();f3=f2[i];f3:SetSize(s,s);f3:ClearAllPoints();if i>6 then f3:SetPoint("BOTTOMRIGHT",f2[i-3],tr,0,0) else f3:SetPoint(tr,f2[1],tr,-(s*(i-3)),0) end end
+
+            /run function CBF(f,i) bf=CreateFrame("Button",f:GetName().."Debuff"..i,f,"CompactDebuffTemplate");bf.baseSize=22;bf:SetSize(f.buffFrames[1]:GetSize()) end;function mv(f) for i=4,12 do sp(f,i) end end
+
+             /run function mv3(f) CompactUnitFrame_SetMaxDebuffs(f,12); if not f.debuffFrames[4] then for i=4,12 do CBF(f,i) end end mv(f) end;hooksecurefunc("CompactUnitFrame_UpdateDebuffs",function(f) if f:GetName():match("^Compact") then mv3(f) end end);
+            ]]
 	end
 end)
 
@@ -228,7 +245,7 @@ function loadKeyBinds(arg)
 		profile = arg
 	end
 	if L1QS_Bindings[profile] then
-		AttemptToSaveBindings(2) --characer specific keybinds
+		SaveBindings(2) --characer specific keybinds
 		LoadBindings(2)
 		for index = 1, GetNumBindings() do
 			local command,_,key1,key2 = GetBinding(index)
@@ -242,7 +259,7 @@ function loadKeyBinds(arg)
 		for key,command in pairs(L1QS_Bindings[profile]) do 
 			SetBinding(key,command)
 		end
-		AttemptToSaveBindings(2)
+		SaveBindings(2)
 	end
 end
 
@@ -275,13 +292,77 @@ if GuidelimeDataChar then
 	L1QS_Settings["Guidelime"] = GuidelimeDataChar
 	L1QS_Settings[race]["currentGuide"] = GuidelimeDataChar["currentGuide"]
 end
+if RXPCData then
+	L1QS_Settings[race].currentGuideName = RXPCData.currentGuideName
+	L1QS_Settings[race].currentGuideGroup = RXPCData.currentGuideGroup
+end
 
 end
 
 function loadAll(arg)
---createMacros(arg)
+createMacros(arg)
 loadKeyBinds(arg)
 loadActionButtons(arg)
 end
 
+--[[
+local swFrame = CreateFrame("Frame")
+local sx,sy
+local unitToken = "player"
 
+C_Timer.After(3,function()
+hooksecurefunc("Stopwatch_Clear",function() 
+local pos = C_Map.GetPlayerMapPosition(C_Map.GetBestMapForUnit(unitToken), unitToken)
+playing = false
+sx = pos.x
+sy = pos.y
+swFrame:SetScript("OnUpdate",SWhandler)
+end)
+end)
+
+function SWhandler()
+	if StopwatchFrame:IsShown() and not Stopwatch_IsPlaying() then
+		local pos = C_Map.GetPlayerMapPosition(C_Map.GetBestMapForUnit(unitToken), unitToken)
+		if pos.x ~= sx and pos.y ~= sy then
+			Stopwatch_Play()
+			swFrame:SetScript("OnUpdate",nil)
+		end
+	else
+		swFrame:SetScript("OnUpdate",nil)
+	end
+end]]
+
+local HSframe = CreateFrame("Frame");
+local currentFPS = GetCVar("maxfps")
+local HSstart = 0
+
+local function SwitchBindLocation()
+	if GetTime() - HSstart > 9.999 then
+		ConfirmBinder()
+		HSframe:SetScript("OnUpdate",nil)
+		SetCVar("maxfps",currentFPS)
+		HSstart = 0
+	end
+end
+
+local function StartHSTimer()
+	if HSstart == 0 then
+		currentFPS = GetCVar("maxfps")
+		SetCVar("maxfps",0)
+		HSstart = GetTime()
+		HSframe:SetScript("OnUpdate",SwitchBindLocation)
+	end
+end
+
+hooksecurefunc("UseContainerItem",function(...)
+	if GetContainerItemID(...) == 6948 then
+		StartHSTimer()
+	end
+end)
+
+hooksecurefunc("UseAction",function(...)
+	local event,id = GetActionInfo(...)
+	if event == "item" and id == 6948 or event == "macro" and IsCurrentSpell(8690) then
+		StartHSTimer()
+	end
+end)

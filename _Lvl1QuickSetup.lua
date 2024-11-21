@@ -148,7 +148,7 @@ end
 
 eventHandler["ADDON_LOADED"] = function(arg1)
 	--print(arg1,RXPData)
-	if arg1 == "WeakAuras" then
+	if arg1 == "WeakAuras" and not _G.WeakAurasSaved then
 		LoadSettings('WeakAurasSaved')
 	elseif arg1 == "RXPGuides" then
 		RXPOnInitialize()
